@@ -1,0 +1,142 @@
+<openerp>
+
+    <!-- ******************* updating groups ******************-->
+    <menuitem id="hr_payroll.menu_hr_payroll_configuration" name="Configuración"
+              parent="hr_payroll.menu_hr_payroll_root" sequence="100"
+              groups="hr_payroll.group_hr_payroll_user,ciberc_payroll.group_ciberc_payroll_approver"/>
+    <menuitem id="hr_payroll.menu_department_tree" action="hr_payroll.action_view_hr_payslip_form"
+              parent="hr_payroll.menu_hr_payroll_root"
+              groups="hr_payroll.group_hr_payroll_user,hr_payroll.group_hr_payroll_manager,ciberc_payroll.group_ciberc_payroll_approver"/>
+
+    <!-- ******************* updating views ******************-->
+    <!-- payslip - distance_from_holiday -->
+    <record id="view_hr_payslip_form_updated" model="ir.ui.view">
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_form"/>
+        <field name="arch" type="xml">
+            <!-- Cambios botones y estados -->
+            <xpath expr="//button[@name='action_payslip_done']" position="before">
+                <button string="Enviar a Aprobación" name="action_payslip_verify" type='object' states="draft" groups="hr_payroll.group_hr_payroll_user,hr_payroll.group_hr_payroll_manager,ciberc_payroll.group_ciberc_payroll_approver"/>
+            </xpath>
+            <xpath expr="//button[@name='compute_sheet']" position="replace"/>
+            <xpath expr="//button[@name='action_payslip_verify']" position="before">
+                <button string="Calcular nómina" name="compute_sheet" type="object" states="draft" class="oe_highlight" groups="hr_payroll.group_hr_payroll_user,hr_payroll.group_hr_payroll_manager,ciberc_payroll.group_ciberc_payroll_approver"/>
+            </xpath>
+            <xpath expr="//button[@name='action_payslip_done']" position="replace">
+                <button string="Confirmar" name="action_payslip_done" type="object" states="verify" groups="hr_payroll.group_hr_payroll_user,ciberc_payroll.group_ciberc_payroll_approver"/>
+            </xpath>
+            <xpath expr="//button[@name='action_payslip_cancel']" position="replace">
+                <button string="Rechazar" name="action_payslip_cancel" type="object" states="verify" groups="hr_payroll.group_hr_payroll_user,ciberc_payroll.group_ciberc_payroll_approver"/>
+            </xpath>
+            <xpath expr="//field[@name='state']" position="attributes"><!-- barra de estados -->
+                <attribute name="statusbar_visible" eval="draft,verify,confirm,done,cancel"/><!-- confirm? -->
+            </xpath>
+            <!-- Cambios one2many-->
+            <xpath expr="//field[@name='worked_days_line_ids']" position="replace">
+                <field name="worked_days_line_ids">
+                    <tree string="Worked Days" editable="bottom">
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="number_of_days" sum="Total Working Days"/>
+                        <field name="number_of_hours"/>
+                        <field name="number_of_days_calendar"/>
+                        <field name="contract_id"/>
+                        <field name="sequence" invisible="True"/>
+                        <field name="distance_from_holiday" invisible="True"/>
+                    </tree>
+                    <form string="Worked Day">
+                        <group col="4">
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="number_of_days"/>
+                            <field name="number_of_hours"/>
+                            <field name="number_of_days_calendar"/>
+                            <field name="contract_id"/>
+                            <field name="sequence"/>
+                            <field name="distance_from_holiday"/>
+                        </group>
+                    </form>
+                </field>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']" position="replace">
+                <field name="line_ids" colspan="4" nolabel="1">
+                    <tree string="Salary Structure" editable="bottom" decoration-info="total == 0">
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="category_id"/>
+                        <field name="sequence" invisible="1"/>
+                        <field name="quantity" digits="(10, 0)"/>
+                        <field name="rate" digits="(10, 2)"/>
+                        <field name="salary_rule_id"/>
+                        <field name="amount" digits="(10, 2)"/>
+                        <field name="total" digits="(10, 2)"/>
+                    </tree>
+                    <form string="Payslip Line">
+                        <group col="4">
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="category_id"/>
+                            <field name="sequence"/>
+                            <field name="quantity" digits="(10, 0)"/>
+                            <field name="rate" digits="(10, 2)"/>
+                            <field name="amount" digits="(10, 2)"/>
+                            <field name="total" digits="(10, 2)"/>
+                            <field name="salary_rule_id"/>
+                        </group>
+                    </form>
+                </field>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- salary rule - sequence visible -->
+    <record id="hr_salary_rule_list_updated" model="ir.ui.view">
+        <field name="model">hr.salary.rule</field>
+        <field name="inherit_id" ref="hr_payroll.hr_salary_rule_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='register_id']" position="replace"/>
+            <xpath expr="//field[@name='sequence']" position="attributes">
+                <attribute name="invisible" eval="0"/>
+            </xpath>
+            <xpath expr="//field[@name='sequence']" position="after">
+                <field name="company_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- procesamientos de nómina - fechas creación y actualización visibles -->
+    <record id="hr_payslip_run_tree_updated" model="ir.ui.view">
+        <field name="model">hr.payslip.run</field>
+        <field name="inherit_id" ref="hr_payroll.hr_payslip_run_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="before">
+                <field name="create_date"/>
+                <field name="write_date"/>
+            </xpath>
+            <xpath expr="//field[@name='credit_note']" position="replace" />
+        </field>
+    </record>
+    
+    <!-- ******************* updating multipayslips ******************-->
+    <record id="multi_payslip_confirm_form_wizard_updated" model="ir.ui.view">
+        <field name="model">multi.payslip.wizard</field>
+        <field name="inherit_id" ref="multi_payslip.multi_payslip_confirm_form_wizard"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='multi_payslip']" position="replace">
+                <button name="multi_payslip" string="Confirmar" type="object" class="oe_highlight" groups="hr_payroll.group_hr_payroll_user,ciberc_payroll.group_ciberc_payroll_approver" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="multi_payslip_confirm_msg_for_notapprovers" model="ir.ui.view">
+        <field name="model">multi.payslip.wizard</field>
+        <field name="inherit_id" ref="multi_payslip.multi_payslip_confirm_form_wizard"/>
+        <field name="groups_id" eval="[(6, 0, [ref('hr_payroll.group_hr_payroll_manager')])]" />
+        <field name="arch" type="xml">
+            <xpath expr="//h3" position="replace">
+                <h4>Usted no tiene permisos para realizar la acción de pagos masivos, consulte con un Responsable Aprobador u Oficial.</h4>
+            </xpath>
+        </field>
+    </record>
+
+</openerp>
